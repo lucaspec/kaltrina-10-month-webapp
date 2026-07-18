@@ -101,8 +101,17 @@
   }
 
   // ---------- Target placement ----------
-  function randomizeEnvelopePosition() {
-    envelope.style.left = rand(24, 76) + '%';
+  const DRIFT_MIN_PCT = 24;
+  const DRIFT_MAX_PCT = 76;
+  const DRIFT_PERIOD_MS = 2600;
+  const driftCenterPct = (DRIFT_MIN_PCT + DRIFT_MAX_PCT) / 2;
+  const driftAmplitudePct = (DRIFT_MAX_PCT - DRIFT_MIN_PCT) / 2;
+
+  function driftEnvelope(now) {
+    const phase = ((now % DRIFT_PERIOD_MS) / DRIFT_PERIOD_MS) * Math.PI * 2;
+    const pct = driftCenterPct + Math.sin(phase) * driftAmplitudePct;
+    envelope.style.left = pct + '%';
+    requestAnimationFrame(driftEnvelope);
   }
 
   // ---------- Screen transitions ----------
@@ -125,7 +134,7 @@
   function updateBowPullUI(power) {
     const pull = (power / 100) * 30;
     const midY = 110 + pull;
-    bowstring.setAttribute('points', `63,110 110,${midY} 157,110`);
+    bowstring.setAttribute('points', `20,110 110,${midY} 200,110`);
     nockedArrow.setAttribute('transform', `translate(110,${midY})`);
   }
 
@@ -291,9 +300,6 @@
     setTimeout(() => envelope.classList.remove('miss-shake'), 400);
     showFeedback(missMessage(info));
 
-    if (!info.angleOk) state.angleTolerance = Math.min(state.angleTolerance + 3, 30);
-    if (!info.powerOk) state.sweetWidth = Math.min(state.sweetWidth + 4, 60);
-    updateSweetSpotUI();
     resetBow();
   }
 
@@ -391,7 +397,6 @@
     state.sweetWidth = 22;
     state.angleTolerance = 9;
     updateSweetSpotUI();
-    randomizeEnvelopePosition();
     resetBow();
     showScreen(screenGame);
   }
@@ -411,7 +416,7 @@
 
   createAmbientHearts();
   updateSweetSpotUI();
-  randomizeEnvelopePosition();
+  requestAnimationFrame(driftEnvelope);
   resetBow();
   showScreen(screenGame);
 })();
