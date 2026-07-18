@@ -14,6 +14,7 @@
   const stage = $('stage');
   const envelope = $('envelope');
   const bowZone = $('bow-zone');
+  const bowAimGroup = $('bow-aim-group');
   const bowstring = $('bowstring');
   const nockedArrow = $('nocked-arrow');
   const flyingArrow = $('flying-arrow');
@@ -32,6 +33,9 @@
 
   const ARROW_W = 70, ARROW_H = 18;
   const CHARGE_PERIOD = 1500; // ms for a full 0 -> 100 -> 0 draw cycle
+  const MAX_AIM_DEG = 42; // how far left/right the bow can tilt
+  const AIM_RANGE_PX = 130; // horizontal drag distance to reach MAX_AIM_DEG
+  const BOW_PIVOT = { x: 110, y: 100 }; // grip point in the bow's own SVG coordinates
 
   const state = {
     charging: false,
@@ -41,6 +45,9 @@
     busy: false,
     sweetStart: 54,
     sweetWidth: 22,
+    aimAngleDeg: 0,
+    aimOriginX: 0,
+    angleTolerance: 9,
   };
 
   const SHORT_MISS = [
@@ -52,6 +59,18 @@
     "Whoa, too much power! 💨",
     "It flew right past 😅",
     "Easy there, Cupid!",
+  ];
+  const AIM_LEFT_MISS = [
+    "Aim a little more left! 👈",
+    "Swing it left a touch",
+  ];
+  const AIM_RIGHT_MISS = [
+    "Aim a little more right! 👉",
+    "Swing it right a touch",
+  ];
+  const GENERAL_MISS = [
+    "Adjust your aim and power! 💘",
+    "Not quite — try again!",
   ];
   const DODGE_LINES = [
     "Nope, try Yes 😌",
@@ -82,6 +101,11 @@
     }
   }
 
+  // ---------- Target placement ----------
+  function randomizeEnvelopePosition() {
+    envelope.style.left = rand(24, 76) + '%';
+  }
+
   // ---------- Screen transitions ----------
   function showScreen(el) {
     [screenGame, screenLetter, screenFinale].forEach((s) => s.classList.remove('active'));
@@ -104,27 +128,43 @@
   }
 
   function updateBowPullUI(power) {
-    const pull = (power / 100) * 24;
-    bowstring.setAttribute('points', `52,10 ${52 - pull},110 52,210`);
-    nockedArrow.setAttribute('transform', `translate(${52 - pull},110)`);
+    const pull = (power / 100) * 34;
+    const midY = BOW_PIVOT.y + pull;
+    bowstring.setAttribute('points', `20,100 110,${midY} 200,100`);
+    nockedArrow.setAttribute('transform', `translate(110,${midY})`);
+  }
+
+  function updateBowRotation() {
+    bowAimGroup.setAttribute('transform', `rotate(${state.aimAngleDeg} ${BOW_PIVOT.x} ${BOW_PIVOT.y})`);
   }
 
   function resetBow() {
     state.busy = false;
+    state.aimAngleDeg = 0;
     nockedArrow.style.opacity = '1';
     powerFill.style.width = '0%';
     powerMarker.style.opacity = '0';
     updateBowPullUI(0);
+    updateBowRotation();
   }
 
-  // ---------- Charge & release ----------
+  // ---------- Charge, aim & release ----------
   function startCharge(e) {
     if (state.busy) return;
     e.preventDefault();
     state.charging = true;
     state.chargeStart = performance.now();
+    state.aimOriginX = e.clientX;
+    state.aimAngleDeg = 0;
     bowZone.classList.add('charging');
     loopCharge();
+  }
+
+  function onAimMove(e) {
+    if (!state.charging) return;
+    const dx = e.clientX - state.aimOriginX;
+    state.aimAngleDeg = clamp((dx / AIM_RANGE_PX) * MAX_AIM_DEG, -MAX_AIM_DEG, MAX_AIM_DEG);
+    updateBowRotation();
   }
 
   function loopCharge() {
@@ -162,42 +202,54 @@
   }
 
   function fire(power) {
-    const hit = power >= state.sweetStart && power <= state.sweetStart + state.sweetWidth;
-
     const stageRect = stage.getBoundingClientRect();
     const bowRect = bowZone.getBoundingClientRect();
     const envRect = envelope.getBoundingClientRect();
 
     const launch = {
       x: bowRect.left + bowRect.width / 2 - stageRect.left,
-      y: bowRect.top + bowRect.height * 0.42 - stageRect.top,
+      y: bowRect.top + bowRect.height * 0.5 - stageRect.top,
     };
     const target = {
       x: envRect.left + envRect.width / 2 - stageRect.left,
       y: envRect.top + envRect.height * 0.55 - stageRect.top,
     };
 
+    const aimAngleDeg = state.aimAngleDeg;
+    const targetAngleDeg = Math.atan2(target.x - launch.x, launch.y - target.y) * 180 / Math.PI;
+    const angleOk = Math.abs(aimAngleDeg - targetAngleDeg) <= state.angleTolerance;
+    const powerOk = power >= state.sweetStart && power <= state.sweetStart + state.sweetWidth;
+    const hit = angleOk && powerOk;
+
     let end, control;
     if (hit) {
       end = target;
       control = { x: (launch.x + target.x) / 2, y: Math.min(launch.y, target.y) - 90 };
-    } else if (power < state.sweetStart) {
-      const f = clamp(0.35 + (power / 100) * 0.35, 0.3, 0.75);
-      end = {
-        x: launch.x + (target.x - launch.x) * f,
-        y: launch.y + (target.y - launch.y) * f + 45,
-      };
-      control = { x: (launch.x + end.x) / 2, y: Math.min(launch.y, end.y) - 50 };
     } else {
-      const f = 1.4;
-      end = { x: launch.x + (target.x - launch.x) * f, y: target.y - 95 };
-      control = { x: (launch.x + target.x) / 2, y: Math.min(launch.y, target.y) - 110 };
+      const targetDistance = Math.hypot(target.x - launch.x, target.y - launch.y);
+      const rad = (aimAngleDeg * Math.PI) / 180;
+      const dir = { x: Math.sin(rad), y: -Math.cos(rad) };
+
+      let distFactor = 1;
+      let droop = 0;
+      if (power < state.sweetStart) {
+        distFactor = clamp(0.35 + (power / 100) * 0.35, 0.3, 0.75);
+        droop = 45;
+      } else if (power > state.sweetStart + state.sweetWidth) {
+        distFactor = 1.4;
+      }
+
+      end = {
+        x: launch.x + dir.x * targetDistance * distFactor,
+        y: launch.y + dir.y * targetDistance * distFactor + droop,
+      };
+      control = { x: (launch.x + end.x) / 2, y: Math.min(launch.y, end.y) - (droop ? 50 : 100) };
     }
 
-    animateArrow(launch, control, end, hit, power);
+    animateArrow(launch, control, end, hit, { power, angleOk, powerOk, aimAngleDeg, targetAngleDeg });
   }
 
-  function animateArrow(P0, C, P2, hit, power) {
+  function animateArrow(P0, C, P2, hit, info) {
     const duration = 620;
     const startTime = performance.now();
     flyingArrow.style.opacity = '1';
@@ -214,13 +266,23 @@
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
-        onArrowLanded(hit, power);
+        onArrowLanded(hit, info);
       }
     }
     requestAnimationFrame(step);
   }
 
-  function onArrowLanded(hit, power) {
+  function missMessage(info) {
+    if (!info.angleOk && info.powerOk) {
+      return info.aimAngleDeg > info.targetAngleDeg ? pick(AIM_LEFT_MISS) : pick(AIM_RIGHT_MISS);
+    }
+    if (info.angleOk && !info.powerOk) {
+      return info.power < state.sweetStart ? pick(SHORT_MISS) : pick(OVER_MISS);
+    }
+    return pick(GENERAL_MISS);
+  }
+
+  function onArrowLanded(hit, info) {
     flyingArrow.style.opacity = '0';
 
     if (hit) {
@@ -235,9 +297,10 @@
 
     envelope.classList.add('miss-shake');
     setTimeout(() => envelope.classList.remove('miss-shake'), 400);
-    showFeedback(power < state.sweetStart ? pick(SHORT_MISS) : pick(OVER_MISS));
+    showFeedback(missMessage(info));
 
-    state.sweetWidth = Math.min(state.sweetWidth + 4, 60);
+    if (!info.angleOk) state.angleTolerance = Math.min(state.angleTolerance + 3, 30);
+    if (!info.powerOk) state.sweetWidth = Math.min(state.sweetWidth + 4, 60);
     updateSweetSpotUI();
     resetBow();
   }
@@ -334,13 +397,16 @@
     envelope.classList.remove('hit', 'miss-shake');
     state.sweetStart = 54;
     state.sweetWidth = 22;
+    state.angleTolerance = 9;
     updateSweetSpotUI();
+    randomizeEnvelopePosition();
     resetBow();
     showScreen(screenGame);
   }
 
   // ---------- Wire up ----------
   bowZone.addEventListener('pointerdown', startCharge);
+  window.addEventListener('pointermove', onAimMove);
   window.addEventListener('pointerup', endCharge);
   window.addEventListener('pointercancel', endCharge);
 
@@ -353,6 +419,7 @@
 
   createAmbientHearts();
   updateSweetSpotUI();
+  randomizeEnvelopePosition();
   resetBow();
   showScreen(screenGame);
 })();
