@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>10 Months 💕</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><text y=%2226%22 font-size=%2226%22>💘</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="ambient-hearts" aria-hidden="true"></div>
+
+  <!-- SCREEN 1: THE GAME -->
+  <main id="screen-game" class="screen active">
+    <header class="game-header">
+      <h1 class="script-title">For Kaltrina</h1>
+      <p id="instructions" class="instructions">Press &amp; hold your bow to draw it back, then let go to loose the arrow at the letter 🏹</p>
+    </header>
+
+    <div id="stage" class="stage">
+      <div id="envelope" class="envelope" aria-hidden="true">
+        <div class="envelope-shadow"></div>
+        <div class="envelope-body">
+          <div class="envelope-flap"></div>
+          <div class="envelope-seal">💌</div>
+        </div>
+      </div>
+
+      <svg id="flying-arrow" class="flying-arrow" viewBox="0 0 120 30" width="70" height="18">
+        <line x1="0" y1="15" x2="88" y2="15" stroke="#8a5a34" stroke-width="4" stroke-linecap="round"/>
+        <path d="M0 15 L15 4 L15 15 Z" fill="#ff8fb3"/>
+        <path d="M0 15 L15 26 L15 15 Z" fill="#ffc2d9"/>
+        <path d="M95 15 C95 9 101 5 106 9 C111 5 117 9 117 15 C117 20 111 25 106 29 C101 25 95 20 95 15 Z" fill="#ff3d68"/>
+      </svg>
+
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+
+      <div id="bow-zone" class="bow-zone">
+        <svg id="bow" class="bow-svg" viewBox="0 0 70 220" width="60" height="190">
+          <path d="M52 8 Q14 110 52 212" stroke="#caa153" stroke-width="9" fill="none" stroke-linecap="round"/>
+          <path d="M52 8 Q22 110 52 212" stroke="#e9cd8e" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+          <polyline id="bowstring" points="52,10 52,110 52,210" stroke="#f4ead0" stroke-width="2" fill="none"/>
+          <g id="nocked-arrow" transform="translate(52,110)">
+            <line x1="0" y1="0" x2="86" y2="0" stroke="#8a5a34" stroke-width="4" stroke-linecap="round"/>
+            <path d="M0 0 L15 -11 L15 0 Z" fill="#ff8fb3"/>
+            <path d="M0 0 L15 11 L15 0 Z" fill="#ffc2d9"/>
+            <path d="M92 0 C92 -6 98 -10 103 -6 C108 -10 114 -6 114 0 C114 5 108 10 103 14 C98 10 92 5 92 0 Z" fill="#ff3d68"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="power-wrap">
+      <div id="power-bar" class="power-bar">
+        <div id="sweet-spot" class="sweet-spot"></div>
+        <div id="power-fill" class="power-fill"></div>
+        <div id="power-marker" class="power-marker"></div>
+      </div>
+      <p class="power-label">draw power</p>
+    </div>
+  </main>
+
+  <!-- SCREEN 2: THE LETTER -->
+  <section id="screen-letter" class="screen">
+    <div class="letter-card" id="letter-card">
+      <div class="letter-ribbon">💌</div>
+      <p class="letter-greeting">My dearest Kaltrina,</p>
+
+      <div class="letter-body">
+        <p>Ten months ago, an ordinary day quietly turned into the beginning of my favorite story.</p>
+        <p>Since then, every month with you has felt like its own small adventure — the laughs that make my cheeks hurt, the quiet moments where I don't need to say anything at all, and the way you make even an average Tuesday feel worth celebrating.</p>
+        <p>I made you wrestle Cupid's bow just to get here, so that should tell you how much I wanted this moment to feel a little bit extra — just like you make my life.</p>
+        <p>So, before anything else...</p>
+      </div>
+
+      <p class="letter-question">Do you still love me?</p>
+
+      <p id="dodge-caption" class="dodge-caption">&nbsp;</p>
+
+      <div class="button-row" id="button-row">
+        <button id="btn-yes" class="btn btn-yes">Yes 💛</button>
+        <button id="btn-no" class="btn btn-no">No</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: THE FINALE -->
+  <section id="screen-finale" class="screen">
+    <div id="heart-burst" class="heart-burst" aria-hidden="true"></div>
+    <div class="finale-card">
+      <p class="finale-heart">🥹💛</p>
+      <p class="finale-lead">That's what I like to hear.</p>
+      <div class="finale-body">
+        <p>Ten months down, and I'm not looking back — only forward. I can't wait for all the months and years still ahead of us: more inside jokes, more little adventures, more lazy nights in, more everything.</p>
+        <p>I love you, Kaltrina. Here's to us.</p>
+      </div>
+      <p class="finale-signature">— Luca</p>
+      <button id="btn-replay" class="btn btn-replay">Play again 🏹</button>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
