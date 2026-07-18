@@ -32,22 +32,21 @@
   const btnReplay = $('btn-replay');
 
   const ARROW_W = 70, ARROW_H = 18;
-  const CHARGE_PERIOD = 1500; // ms for a full 0 -> 100 -> 0 draw cycle
   const MAX_AIM_DEG = 42; // how far left/right the bow can tilt
   const AIM_RANGE_PX = 130; // horizontal drag distance to reach MAX_AIM_DEG
-  const BOW_PIVOT = { x: 110, y: 100 }; // grip point in the bow's own SVG coordinates
+  const POWER_RANGE_PX = 130; // vertical drag distance to reach 100% draw power
+  const BOW_PIVOT = { x: 110, y: 110 }; // grip point in the bow's own SVG coordinates
 
   const state = {
     charging: false,
-    chargeStart: 0,
-    rafId: null,
     currentPower: 0,
     busy: false,
     sweetStart: 54,
     sweetWidth: 22,
     aimAngleDeg: 0,
-    aimOriginX: 0,
     angleTolerance: 9,
+    dragOriginX: 0,
+    dragOriginY: 0,
   };
 
   const SHORT_MISS = [
@@ -118,19 +117,15 @@
     sweetSpotEl.style.width = state.sweetWidth + '%';
   }
 
-  function triangleWave(t, period) {
-    const phase = (t % period) / period;
-    return phase < 0.5 ? phase * 2 * 100 : (1 - phase) * 2 * 100;
-  }
-
   function updatePowerUI(power) {
     powerFill.style.width = power + '%';
+    powerMarker.style.left = power + '%';
   }
 
   function updateBowPullUI(power) {
-    const pull = (power / 100) * 34;
-    const midY = BOW_PIVOT.y + pull;
-    bowstring.setAttribute('points', `20,100 110,${midY} 200,100`);
+    const pull = (power / 100) * 30;
+    const midY = 110 + pull;
+    bowstring.setAttribute('points', `63,110 110,${midY} 157,110`);
     nockedArrow.setAttribute('transform', `translate(110,${midY})`);
   }
 
@@ -141,50 +136,47 @@
   function resetBow() {
     state.busy = false;
     state.aimAngleDeg = 0;
+    state.currentPower = 0;
     nockedArrow.style.opacity = '1';
-    powerFill.style.width = '0%';
     powerMarker.style.opacity = '0';
+    updatePowerUI(0);
     updateBowPullUI(0);
     updateBowRotation();
   }
 
-  // ---------- Charge, aim & release ----------
+  // ---------- Charge, aim & release (driven entirely by drag distance) ----------
   function startCharge(e) {
     if (state.busy) return;
     e.preventDefault();
     state.charging = true;
-    state.chargeStart = performance.now();
-    state.aimOriginX = e.clientX;
+    state.dragOriginX = e.clientX;
+    state.dragOriginY = e.clientY;
     state.aimAngleDeg = 0;
+    state.currentPower = 0;
     bowZone.classList.add('charging');
-    loopCharge();
-  }
-
-  function onAimMove(e) {
-    if (!state.charging) return;
-    const dx = e.clientX - state.aimOriginX;
-    state.aimAngleDeg = clamp((dx / AIM_RANGE_PX) * MAX_AIM_DEG, -MAX_AIM_DEG, MAX_AIM_DEG);
+    powerMarker.style.opacity = '1';
+    updatePowerUI(0);
+    updateBowPullUI(0);
     updateBowRotation();
   }
 
-  function loopCharge() {
+  function onDragMove(e) {
     if (!state.charging) return;
-    const elapsed = performance.now() - state.chargeStart;
-    state.currentPower = triangleWave(elapsed, CHARGE_PERIOD);
+    const dx = e.clientX - state.dragOriginX;
+    const dy = e.clientY - state.dragOriginY;
+    state.aimAngleDeg = clamp((dx / AIM_RANGE_PX) * MAX_AIM_DEG, -MAX_AIM_DEG, MAX_AIM_DEG);
+    state.currentPower = clamp((dy / POWER_RANGE_PX) * 100, 0, 100);
     updatePowerUI(state.currentPower);
     updateBowPullUI(state.currentPower);
-    state.rafId = requestAnimationFrame(loopCharge);
+    updateBowRotation();
   }
 
   function endCharge() {
     if (!state.charging) return;
     state.charging = false;
     bowZone.classList.remove('charging');
-    cancelAnimationFrame(state.rafId);
 
     const power = state.currentPower;
-    powerMarker.style.left = clamp(power, 0, 100) + '%';
-    powerMarker.style.opacity = '1';
     nockedArrow.style.opacity = '0';
     state.busy = true;
     fire(power);
@@ -207,7 +199,7 @@
     const envRect = envelope.getBoundingClientRect();
 
     const launch = {
-      x: bowRect.left + bowRect.width / 2 - stageRect.left,
+      x: bowRect.left + bowRect.width * 0.5 - stageRect.left,
       y: bowRect.top + bowRect.height * 0.5 - stageRect.top,
     };
     const target = {
@@ -406,7 +398,7 @@
 
   // ---------- Wire up ----------
   bowZone.addEventListener('pointerdown', startCharge);
-  window.addEventListener('pointermove', onAimMove);
+  window.addEventListener('pointermove', onDragMove);
   window.addEventListener('pointerup', endCharge);
   window.addEventListener('pointercancel', endCharge);
 

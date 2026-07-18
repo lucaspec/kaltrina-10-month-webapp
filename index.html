@@ -17,7 +17,7 @@
   <main id="screen-game" class="screen active">
     <header class="game-header">
       <h1 class="script-title">For Kaltrina</h1>
-      <p id="instructions" class="instructions">Press &amp; hold your bow to draw it back, drag left or right to aim, then let go to loose the arrow at the letter 🏹</p>
+      <p id="instructions" class="instructions">Press your bow, drag down to draw it back and left/right to aim, then let go to loose the arrow at the letter 🏹</p>
     </header>
 
     <div id="stage" class="stage">
@@ -39,15 +39,15 @@
       <div id="feedback" class="feedback" aria-live="polite"></div>
 
       <div id="bow-zone" class="bow-zone">
-        <svg id="bow" class="bow-svg" viewBox="-20 -30 260 260" width="190" height="190">
-          <g id="bow-aim-group" transform="rotate(0 110 100)">
-            <path d="M20 100 Q110 148 200 100" stroke="#caa153" stroke-width="9" fill="none" stroke-linecap="round"/>
-            <path d="M20 100 Q110 138 200 100" stroke="#e9cd8e" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
-            <polyline id="bowstring" points="20,100 110,100 200,100" stroke="#f4ead0" stroke-width="2" fill="none"/>
-            <g id="nocked-arrow" transform="translate(110,100)">
+        <svg id="bow" class="bow-svg" viewBox="-20 -20 260 260" width="170" height="170">
+          <g id="bow-aim-group" transform="rotate(0 110 110)">
+            <path d="M110 20 Q58 60 63 110 Q58 160 110 200" stroke="#caa153" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <path d="M110 20 Q162 60 157 110 Q162 160 110 200" stroke="#caa153" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <polyline id="bowstring" points="63,110 110,110 157,110" stroke="#f4ead0" stroke-width="2" fill="none"/>
+            <g id="nocked-arrow" transform="translate(110,110)">
               <line x1="0" y1="0" x2="0" y2="-84" stroke="#8a5a34" stroke-width="4" stroke-linecap="round"/>
-              <path d="M0 0 L-10 -12 L0 -12 Z" fill="#ff8fb3"/>
-              <path d="M0 0 L10 -12 L0 -12 Z" fill="#ffc2d9"/>
+              <path d="M0 0 L-11 -15 L0 -15 Z" fill="#ff8fb3"/>
+              <path d="M0 0 L11 -15 L0 -15 Z" fill="#ffc2d9"/>
               <path d="M0 -108 C-16 -92 -16 -76 0 -84 C16 -76 16 -92 0 -108 Z" fill="#ff3d68"/>
             </g>
           </g>
